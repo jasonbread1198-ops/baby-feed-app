@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f5b7a1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="喂奶闹钟">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="喂奶闹钟">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.svg" sizes="192x192">
+<link rel="apple-touch-icon" href="icons/icon-192.svg">
+<title>🍼 宝宝喂奶闹钟</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    background: #fef6f0; color: #4a3728; min-height: 100vh; min-height: 100dvh;
+    display: flex; justify-content: center; align-items: flex-start; padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    max-width: 440px; width: 100%; background: #fff; min-height: 100vh; min-height: 100dvh;
+    padding: 24px 20px 32px; box-shadow: 0 0 40px rgba(180,120,80,.08);
+    position: relative; overflow: hidden;
+  }
+  .container::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, #f5b7a1, #f8d5c0, #f5b7a1);
+  }
+
+  h1 { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 2px; display: flex; align-items: center; justify-content: center; gap: 8px; padding-top: 8px; }
+  .subtitle { text-align: center; color: #b8a08e; font-size: 13px; margin-bottom: 20px; }
+
+  /* Stats */
+  .stats { display: flex; gap: 8px; margin-bottom: 16px; }
+  .stat-card {
+    flex: 1; background: #fdf8f4; border-radius: 14px; padding: 12px 8px; text-align: center;
+    border: 1px solid #f5e8de;
+  }
+  .stat-card .num { font-size: 20px; font-weight: 700; color: #e67e5a; }
+  .stat-card .label { font-size: 11px; color: #b8a08e; margin-top: 2px; }
+
+  /* Status */
+  .status-card {
+    background: linear-gradient(135deg, #fdf8f4, #fef9f6);
+    border-radius: 20px; padding: 20px; text-align: center;
+    border: 1px solid #f5e8de; margin-bottom: 16px;
+  }
+  .last-feed { font-size: 13px; color: #b8a08e; }
+  .last-feed strong { color: #4a3728; font-weight: 600; }
+  .countdown {
+    font-size: 52px; font-weight: 800; margin: 6px 0 2px;
+    font-variant-numeric: tabular-nums; letter-spacing: 2px;
+    transition: color .3s;
+  }
+  .countdown.warning { color: #e67e5a; }
+  .countdown.overdue { color: #d45a4a; }
+  .countdown-label { font-size: 13px; color: #b8a08e; }
+  .next-time { font-size: 13px; color: #b8a08e; margin-top: 4px; }
+
+  /* Interval */
+  .interval-row {
+    display: flex; gap: 8px; margin-bottom: 16px; justify-content: center;
+    flex-wrap: wrap;
+  }
+  .interval-btn {
+    padding: 8px 20px; border-radius: 20px; border: 1.5px solid #f0e2d6;
+    background: transparent; color: #7a6a5a; font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: .15s; -webkit-tap-highlight-color: transparent;
+  }
+  .interval-btn:hover { border-color: #f5b7a1; }
+  .interval-btn:active { transform: scale(.96); }
+  .interval-btn.active { background: #f5b7a1; color: #fff; border-color: #f5b7a1; }
+  .interval-custom {
+    display: flex; align-items: center; gap: 4px;
+  }
+  .interval-custom input {
+    width: 44px; padding: 8px 4px; text-align: center; border-radius: 10px;
+    border: 1.5px solid #f0e2d6; background: #fdf8f4; color: #4a3728;
+    font-size: 14px; font-weight: 600; outline: none;
+  }
+  .interval-custom input:focus { border-color: #f5b7a1; }
+  .interval-custom span { font-size: 13px; color: #b8a08e; }
+
+  /* Record */
+  .record-section { margin-bottom: 16px; }
+  .section-title {
+    font-size: 14px; font-weight: 600; color: #4a3728; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .record-row { display: flex; gap: 10px; align-items: center; }
+  .record-row input {
+    flex: 1; padding: 14px 12px; border-radius: 14px; border: 2px solid #f0e2d6;
+    background: #fdf8f4; font-size: 20px; font-weight: 700; text-align: center;
+    color: #4a3728; outline: none; transition: .2s; min-width: 0;
+  }
+  .record-row input:focus { border-color: #f5b7a1; }
+  .record-row input::placeholder { font-weight: 400; font-size: 14px; color: #d0c0b0; }
+  .record-row .unit { font-size: 14px; color: #b8a08e; font-weight: 500; min-width: 24px; }
+  .record-row button {
+    padding: 14px 24px; border: none; border-radius: 14px; background: #f5b7a1;
+    color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; transition: .15s;
+    white-space: nowrap;
+  }
+  .record-row button:hover { background: #e8a08a; }
+  .record-row button:active { transform: scale(.96); }
+  .quick-amounts { display: flex; gap: 6px; margin-top: 10px; }
+  .quick-amounts button {
+    flex: 1; padding: 10px 4px; border-radius: 12px; border: 1.5px solid #f0e2d6;
+    background: #fdf8f4; color: #7a6a5a; font-size: 15px; font-weight: 600;
+    cursor: pointer; transition: .15s; -webkit-tap-highlight-color: transparent;
+  }
+  .quick-amounts button:hover { border-color: #f5b7a1; background: #fff5ef; }
+  .quick-amounts button:active { transform: scale(.95); }
+  .quick-amounts button.active { border-color: #f5b7a1; background: #f5b7a1; color: #fff; }
+
+  /* History */
+  .history-list { max-height: 260px; overflow-y: auto; margin-top: 2px; }
+  .history-list::-webkit-scrollbar { width: 3px; }
+  .history-list::-webkit-scrollbar-thumb { background: #f0e2d6; border-radius: 4px; }
+  .history-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid #f5ece4;
+  }
+  .history-item:last-child { border-bottom: none; }
+  .history-time { font-weight: 600; font-size: 15px; }
+  .history-time small { font-weight: 400; font-size: 12px; color: #b8a08e; margin-left: 6px; }
+  .history-amount { font-weight: 700; font-size: 16px; color: #e67e5a; }
+  .history-amount small { font-weight: 400; font-size: 12px; color: #b8a08e; }
+  .history-interval { font-size: 12px; color: #b8a08e; margin-top: 2px; }
+  .empty-history {
+    text-align: center; padding: 32px 0; color: #d0c0b0; font-size: 14px;
+  }
+  .history-actions { display: flex; gap: 12px; margin-top: 10px; }
+  .history-actions button {
+    flex: 1; padding: 10px; border-radius: 12px; border: 1.5px solid #f0e2d6;
+    background: transparent; color: #7a6a5a; font-size: 13px; cursor: pointer; transition: .15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .history-actions button:active { background: #fdf8f4; transform: scale(.97); }
+  .history-actions button:hover { border-color: #e67e5a; color: #e67e5a; }
+
+  /* Toast */
+  .toast {
+    display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #4a3728; color: #fff; padding: 14px 28px; border-radius: 16px;
+    font-size: 15px; font-weight: 500; box-shadow: 0 8px 30px rgba(74,55,40,.25);
+    z-index: 100; animation: toastIn .3s ease; max-width: 90vw; text-align: center;
+  }
+  .toast.show { display: block; }
+  @keyframes toastIn { from { opacity: 0; transform: translateX(-50%) translateY(20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+  /* Notification bar */
+  .notif-bar {
+    display: none; align-items: center; gap: 10px; padding: 10px 16px;
+    background: #fef1e8; border-radius: 14px; margin-bottom: 16px; font-size: 13px;
+  }
+  .notif-bar.show { display: flex; }
+  .notif-bar button {
+    padding: 6px 16px; border-radius: 10px; border: none; background: #e67e5a;
+    color: #fff; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap;
+  }
+  .notif-bar button:active { opacity: .8; }
+
+  /* Install banner */
+  .install-banner {
+    display: none; align-items: center; justify-content: space-between;
+    padding: 10px 16px; background: linear-gradient(135deg, #f5b7a1, #e8a08a);
+    border-radius: 14px; margin-bottom: 16px; color: #fff;
+  }
+  .install-banner.show { display: flex; }
+  .install-banner span { font-size: 13px; font-weight: 500; }
+  .install-banner button {
+    padding: 6px 16px; border-radius: 10px; border: none; background: #fff;
+    color: #e67e5a; font-size: 12px; font-weight: 700; cursor: pointer;
+  }
+  .install-banner .close-banner {
+    background: transparent; color: rgba(255,255,255,.7); font-size: 18px;
+    padding: 2px 6px; border: none; cursor: pointer;
+  }
+
+  /* Offline indicator */
+  .offline-indicator {
+    display: none; text-align: center; padding: 4px; font-size: 11px;
+    background: #fef1e8; color: #e67e5a; border-radius: 8px; margin-bottom: 8px;
+  }
+  .offline-indicator.show { display: block; }
+
+  /* Safe area for notched phones */
+  @supports (padding-top: env(safe-area-inset-top)) {
+    .container { padding-left: calc(20px + env(safe-area-inset-left)); padding-right: calc(20px + env(safe-area-inset-right)); padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
+  }
+
+  /* Dark mode support */
+  @media (prefers-color-scheme: dark) {
+    body { background: #1a1512; }
+    .container { background: #241e1a; }
+    .container::before { opacity: .6; }
+    h1, .section-title { color: #e8ddd4; }
+    .subtitle, .last-feed, .countdown-label, .next-time, .history-interval,
+    .record-row .unit, .stat-card .label, .interval-custom span,
+    .history-amount small, .history-time small { color: #8a7a6a; }
+    .stat-card, .status-card, .record-row input, .interval-custom input,
+    .quick-amounts button { background: #2d2622; border-color: #3a322e; }
+    .status-card { background: linear-gradient(135deg, #2d2622, #2a2320); }
+    .stat-card { border-color: #3a322e; }
+    .interval-btn { border-color: #3a322e; color: #b8a08e; background: transparent; }
+    .interval-btn:hover { border-color: #e67e5a; }
+    .interval-btn.active { background: #e67e5a; color: #fff; border-color: #e67e5a; }
+    .record-row input { color: #e8ddd4; }
+    .record-row input::placeholder { color: #5a4a3a; }
+    .countdown { color: #e8ddd4; }
+    .history-item { border-color: #2d2622; }
+    .history-amount { color: #f5b7a1; }
+    .history-actions button { border-color: #3a322e; color: #8a7a6a; }
+    .history-actions button:hover { border-color: #f5b7a1; color: #f5b7a1; }
+    .empty-history { color: #5a4a3a; }
+    .quick-amounts button { color: #b8a08e; }
+    .quick-amounts button.active { background: #e67e5a; color: #fff; }
+    .toast { background: #3a322e; }
+  }
+</style>
+</head>
+<body>
+<div class="container" id="app">
+  <h1>🍼 喂奶闹钟</h1>
+  <p class="subtitle">记录喂奶 · 准时提醒</p>
+
+  <!-- Offline -->
+  <div class="offline-indicator" id="offlineIndicator">📡 离线模式</div>
+
+  <!-- Install banner -->
+  <div class="install-banner" id="installBanner">
+    <span>📲 安装到桌面，不错过每次喂奶</span>
+    <div style="display:flex;gap:4px;align-items:center">
+      <button id="installBtn">安装</button>
+      <button class="close-banner" id="closeBanner">✕</button>
+    </div>
+  </div>
+
+  <!-- Notification permission -->
+  <div class="notif-bar" id="notifBar">
+    <span>🔔 开启喂奶提醒</span>
+    <button id="notifBtn">开启</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats">
+    <div class="stat-card"><div class="num" id="todayCount">0</div><div class="label">今日喂奶</div></div>
+    <div class="stat-card"><div class="num" id="todayTotal">0</div><div class="label">今日总量 (ml)</div></div>
+    <div class="stat-card"><div class="num" id="avgInterval">-</div><div class="label">平均间隔</div></div>
+  </div>
+
+  <!-- Status -->
+  <div class="status-card">
+    <div class="last-feed" id="lastFeedInfo">上次喂奶：--:-- · -- ml</div>
+    <div class="countdown" id="countdownDisplay">--:--:--</div>
+    <div class="countdown-label" id="countdownLabel">距离下次喂奶</div>
+    <div class="next-time" id="nextTime">预计下次：--:--</div>
+  </div>
+
+  <!-- Interval -->
+  <div class="interval-row" id="intervalRow">
+    <button class="interval-btn" data-h="2">2 小时</button>
+    <button class="interval-btn active" data-h="3">3 小时</button>
+    <button class="interval-btn" data-h="4">4 小时</button>
+    <div class="interval-custom">
+      <input type="number" id="customInterval" value="3" min="1" max="6" step="0.5">
+      <span>h</span>
+    </div>
+  </div>
+
+  <!-- Record -->
+  <div class="record-section">
+    <div class="section-title">📝 记录喂奶</div>
+    <div class="record-row">
+      <input type="number" id="amountInput" placeholder="奶量" min="0" max="500" step="5" inputmode="numeric">
+      <span class="unit">ml</span>
+      <button id="recordBtn">记录</button>
+    </div>
+    <div class="quick-amounts" id="quickAmounts">
+      <button data-ml="60">60</button>
+      <button data-ml="90">90</button>
+      <button data-ml="120">120</button>
+      <button data-ml="150">150</button>
+      <button data-ml="180">180</button>
+      <button data-ml="210">210</button>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div>
+    <div class="section-title">📋 喂奶记录</div>
+    <div class="history-list" id="historyList">
+      <div class="empty-history">还没有记录 🍼</div>
+    </div>
+    <div class="history-actions">
+      <button id="clearTodayBtn">清除今日</button>
+      <button id="clearAllBtn">清除全部</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'baby_feed_records';
+  let records = [];
+
+  function loadRecords() {
+    try { const raw = localStorage.getItem(STORAGE_KEY); if (raw) records = JSON.parse(raw); } catch(_) {}
+  }
+  function saveRecords() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); } catch(_) {}
+  }
+
+  // DOM
+  const $ = id => document.getElementById(id);
+  const countdownDisplay = $('countdownDisplay');
+  const countdownLabel   = $('countdownLabel');
+  const lastFeedInfo     = $('lastFeedInfo');
+  const nextTime         = $('nextTime');
+  const amountInput      = $('amountInput');
+  const recordBtn        = $('recordBtn');
+  const historyList      = $('historyList');
+  const todayCount       = $('todayCount');
+  const todayTotal       = $('todayTotal');
+  const avgInterval      = $('avgInterval');
+  const toast            = $('toast');
+  const notifBar         = $('notifBar');
+  const notifBtn         = $('notifBtn');
+  const customInterval   = $('customInterval');
+  const clearTodayBtn    = $('clearTodayBtn');
+  const clearAllBtn      = $('clearAllBtn');
+  const installBanner    = $('installBanner');
+  const installBtn       = $('installBtn');
+  const closeBanner      = $('closeBanner');
+  const offlineIndicator = $('offlineIndicator');
+
+  let intervalHours = 3;
+  let timerId = null;
+  let deferredPrompt = null;
+
+  // --- Helpers ---
+  function pad(n) { return String(n).padStart(2,'0'); }
+  function timeStr(d) { return `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+  function dateStr(d) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+  function isToday(d) { return dateStr(d) === dateStr(new Date()); }
+
+  function formatDuration(ms) {
+    const totalMin = Math.round(ms / 60000);
+    if (totalMin < 60) return `${totalMin} 分钟`;
+    const h = Math.floor(totalMin / 60), m = totalMin % 60;
+    return m > 0 ? `${h} 小时 ${m} 分` : `${h} 小时`;
+  }
+
+  // --- Countdown ---
+  function getNextFeedTime() {
+    if (records.length === 0) return null;
+    return new Date(new Date(records[records.length - 1].time).getTime() + intervalHours * 3600000);
+  }
+
+  function updateCountdown() {
+    const next = getNextFeedTime();
+    if (!next) {
+      countdownDisplay.textContent = '--:--:--';
+      countdownDisplay.className = 'countdown';
+      countdownLabel.textContent = '还没有喂奶记录';
+      nextTime.textContent = '';
+      lastFeedInfo.textContent = '上次喂奶：--:-- · -- ml';
+      return;
+    }
+
+    const last = records[records.length - 1];
+    const lastD = new Date(last.time);
+    lastFeedInfo.textContent = `上次喂奶：${timeStr(lastD)} · ${last.amount} ml`;
+    nextTime.textContent = `预计下次：${timeStr(next)}`;
+
+    const diff = next.getTime() - Date.now();
+    if (diff <= 0) {
+      const totalSec = Math.floor(Math.abs(diff) / 1000);
+      const hh = Math.floor(totalSec / 3600);
+      const mm = Math.floor((totalSec % 3600) / 60);
+      const ss = totalSec % 60;
+      countdownDisplay.textContent = `+${pad(hh)}:${pad(mm)}:${pad(ss)}`;
+      countdownDisplay.className = 'countdown overdue';
+      countdownLabel.textContent = '⚠️ 已超时，该喂奶了';
+    } else if (diff < 600000) {
+      const totalSec = Math.floor(diff / 1000);
+      countdownDisplay.textContent = `${pad(Math.floor(totalSec / 60))}:${pad(totalSec % 60)}`;
+      countdownDisplay.className = 'countdown warning';
+      countdownLabel.textContent = '⏰ 快要喂奶了';
+    } else {
+      const totalSec = Math.floor(diff / 1000);
+      countdownDisplay.textContent = `${pad(Math.floor(totalSec / 3600))}:${pad(Math.floor((totalSec % 3600) / 60))}:${pad(totalSec % 60)}`;
+      countdownDisplay.className = 'countdown';
+      countdownLabel.textContent = '距离下次喂奶';
+    }
+  }
+
+  function startCountdown() {
+    if (timerId) clearInterval(timerId);
+    updateCountdown();
+    timerId = setInterval(updateCountdown, 1000);
+  }
+
+  // --- Alarm ---
+  function playAlarm() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [523.25, 659.25, 783.99].forEach((freq, i) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sine';
+        o.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.25);
+        g.gain.setValueAtTime(0.25, ctx.currentTime + i * 0.25);
+        g.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * 0.25 + 0.6);
+        o.start(ctx.currentTime + i * 0.25);
+        o.stop(ctx.currentTime + i * 0.25 + 0.6);
+      });
+    } catch(_) {}
+  }
+
+  function showNotification() {
+    const next = getNextFeedTime();
+    if (!next) return;
+    if (next.getTime() - Date.now() > 60000) return;
+
+    playAlarm();
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('🍼 喂奶时间到！', {
+        body: `宝宝该吃奶了（间隔 ${intervalHours} 小时）`,
+        icon: 'icons/icon-192.svg',
+        tag: 'baby-feed',
+        requireInteraction: true,
+        vibrate: [200, 100, 200, 100, 400],
+      });
+    }
+    showToast('🍼 喂奶时间到！');
+  }
+
+  let alarmCheckId = null;
+  function startAlarmCheck() {
+    if (alarmCheckId) clearInterval(alarmCheckId);
+    alarmCheckId = setInterval(showNotification, 15000);
+    setTimeout(showNotification, 1000);
+  }
+
+  // --- Toast ---
+  let toastTimer = null;
+  function showToast(msg) {
+    toast.textContent = msg; toast.classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+  }
+
+  // --- History & Stats ---
+  function renderHistory() {
+    if (records.length === 0) {
+      historyList.innerHTML = '<div class="empty-history">还没有记录 🍼</div>';
+      return;
+    }
+    const reversed = [...records].reverse().slice(0, 20);
+    let html = '';
+    for (let i = 0; i < reversed.length; i++) {
+      const r = reversed[i];
+      const d = new Date(r.time);
+      const origIdx = records.length - 1 - i;
+      let intervalStr = '';
+      if (origIdx > 0) {
+        const prev = new Date(records[origIdx - 1].time);
+        const diffMs = d.getTime() - prev.getTime();
+        if (diffMs < 86400000) intervalStr = formatDuration(diffMs);
+      }
+      const dateTag = dateStr(d) !== dateStr(new Date()) ? `<small>${dateStr(d).slice(5)}</small>` : '';
+      html += `<div class="history-item">
+        <div><div class="history-time">${timeStr(d)}${dateTag}</div>${intervalStr ? `<div class="history-interval">距上次 ${intervalStr}</div>` : ''}</div>
+        <div class="history-amount">${r.amount} <small>ml</small></div>
+      </div>`;
+    }
+    historyList.innerHTML = html;
+  }
+
+  function updateStats() {
+    const todayRecords = records.filter(r => isToday(new Date(r.time)));
+    todayCount.textContent = todayRecords.length;
+    todayTotal.textContent = todayRecords.reduce((s, r) => s + r.amount, 0);
+    if (records.length >= 2) {
+      const todaySorted = todayRecords.sort((a,b) => new Date(a.time) - new Date(b.time));
+      if (todaySorted.length >= 2) {
+        let totalGap = 0;
+        for (let i = 1; i < todaySorted.length; i++)
+          totalGap += new Date(todaySorted[i].time).getTime() - new Date(todaySorted[i-1].time).getTime();
+        avgInterval.textContent = formatDuration(totalGap / (todaySorted.length - 1));
+      } else { avgInterval.textContent = '-'; }
+    } else { avgInterval.textContent = '-'; }
+  }
+
+  // --- Record ---
+  function recordFeed(amount) {
+    records.push({ time: new Date().toISOString(), amount: Number(amount) });
+    saveRecords();
+    renderHistory();
+    updateStats();
+    updateCountdown();
+
+    const next = getNextFeedTime();
+    if (next) {
+      const minutesUntil = (next.getTime() - Date.now()) / 60000;
+      if (minutesUntil > 0.5) showToast(`✅ ${amount} ml · 下次 ${timeStr(next)}`);
+      else showToast(`✅ ${amount} ml 已记录`);
+    } else {
+      showToast(`✅ ${amount} ml 已记录`);
+    }
+    // Vibrate on record (mobile)
+    if (navigator.vibrate) navigator.vibrate(15);
+  }
+
+  // --- Event Listeners ---
+  recordBtn.addEventListener('click', () => {
+    const val = parseInt(amountInput.value, 10);
+    if (!val || val <= 0) { showToast('请填写奶量'); return; }
+    if (val > 500) { showToast('奶量看起来有点多，确认一下？'); return; }
+    recordFeed(val);
+    amountInput.value = '';
+    document.querySelectorAll('.quick-amounts button').forEach(b => b.classList.remove('active'));
+  });
+
+  amountInput.addEventListener('keydown', e => { if (e.key === 'Enter') recordBtn.click(); });
+  amountInput.addEventListener('focus', () => {
+    document.querySelectorAll('.quick-amounts button').forEach(b => b.classList.remove('active'));
+  });
+
+  // Quick amounts
+  document.querySelectorAll('.quick-amounts button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      amountInput.value = btn.dataset.ml;
+      document.querySelectorAll('.quick-amounts button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // Interval
+  function setIntervalHours(h) {
+    intervalHours = h; customInterval.value = h;
+    document.querySelectorAll('.interval-btn').forEach(b => b.classList.toggle('active', parseFloat(b.dataset.h) === h));
+    updateCountdown();
+  }
+  document.querySelectorAll('.interval-btn').forEach(btn => {
+    btn.addEventListener('click', () => setIntervalHours(parseFloat(btn.dataset.h)));
+  });
+  customInterval.addEventListener('change', () => {
+    let v = parseFloat(customInterval.value) || 3;
+    if (v < 1) v = 1; if (v > 6) v = 6;
+    customInterval.value = v; setIntervalHours(v);
+  });
+  customInterval.addEventListener('focus', () => {
+    document.querySelectorAll('.interval-btn').forEach(b => b.classList.remove('active'));
+  });
+
+  // Notifications
+  if ('Notification' in window && Notification.permission === 'default') notifBar.classList.add('show');
+  notifBtn.addEventListener('click', () => {
+    Notification.requestPermission().then(perm => {
+      if (perm === 'granted') { notifBar.classList.remove('show'); showToast('🔔 通知已开启'); }
+    });
+  });
+
+  // Clear
+  clearTodayBtn.addEventListener('click', () => {
+    const todayStr = dateStr(new Date());
+    records = records.filter(r => dateStr(new Date(r.time)) !== todayStr);
+    saveRecords(); renderHistory(); updateStats(); updateCountdown();
+    showToast('已清除今日记录');
+  });
+  clearAllBtn.addEventListener('click', () => {
+    if (records.length === 0) { showToast('还没有记录'); return; }
+    if (!confirm('确定清除全部记录？')) return;
+    records = []; saveRecords(); renderHistory(); updateStats(); updateCountdown();
+    showToast('已清除全部记录');
+  });
+
+  // --- PWA Install ---
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!localStorage.getItem('pwa_install_dismissed')) installBanner.classList.add('show');
+  });
+
+  installBtn.addEventListener('click', () => {
+    installBanner.classList.remove('show');
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then(() => { deferredPrompt = null; });
+    }
+  });
+
+  closeBanner.addEventListener('click', () => {
+    installBanner.classList.remove('show');
+    localStorage.setItem('pwa_install_dismissed', '1');
+  });
+
+  // Detect installed (display-mode: standalone)
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    installBanner.classList.remove('show');
+  }
+
+  // --- Online/Offline ---
+  window.addEventListener('offline', () => offlineIndicator.classList.add('show'));
+  window.addEventListener('online', () => offlineIndicator.classList.remove('show'));
+  if (!navigator.onLine) offlineIndicator.classList.add('show');
+
+  // --- Service Worker Registration ---
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+
+  // --- Visibility ---
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) { updateCountdown(); updateStats(); }
+  });
+
+  // Tab title
+  setInterval(() => {
+    const next = getNextFeedTime();
+    if (next) {
+      const diff = next.getTime() - Date.now();
+      if (diff > 0 && diff < 3600000) {
+        const s = Math.floor(diff / 1000);
+        document.title = `🍼 ${pad(Math.floor(s / 60))}:${pad(s % 60)} 喂奶`;
+        return;
+      }
+    }
+    document.title = '🍼 喂奶闹钟';
+  }, 5000);
+
+  // --- Init ---
+  loadRecords();
+  renderHistory();
+  updateStats();
+  startCountdown();
+  startAlarmCheck();
+})();
+</script>
+</body>
+</html>
